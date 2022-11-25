@@ -419,7 +419,7 @@ void check(TokenType expected) {
     else {
         compiler.out_file.Out("Error in line ");
         compiler.out_file.Out(to_string(compiler.in_file.cur_line_num));
-        exit(0);
+        throw 0;
     }
 }
 
@@ -543,7 +543,20 @@ TreeNode *writeStmt() {
     return stmt;
 }
 
+TreeNode *expr() {
+    TreeNode *stmt = mathExpr();
 
+    if (token.getType() == LESS_THAN || token.getType() == EQUAL) {
+        TreeNode *temp = mathExpr();
+        if (temp != NULL) {
+            temp->child[0] = stmt;
+            temp->oper = token.getType();
+            stmt = temp;
+        }
+        check(token.getType());
+    }
+    return stmt;
+}
 
 
 
