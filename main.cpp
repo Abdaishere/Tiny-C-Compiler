@@ -558,11 +558,155 @@ TreeNode *expr() {
     return stmt;
 }
 
+TreeNode *mathExpr() {
+    TreeNode *termNode = term();
+    TreeNode *seq = termNode;
+    while ((token.getType() != ENDFILE) && (token.getType() != END)
+           && (token.getType() != ELSE) && (token.getType() != UNTIL)) {
+        TreeNode *temp;
+
+        //  { (+|-) term }
+        if (token.getType() == PLUS || token.getType() == MINUS)
+        {
+            temp->oper = token.getType();
+            temp->node_kind = OPER_NODE;
+            check(token.getType());
+        }
+        else {
+            compiler.out_file.Out("Error in line ");
+            compiler.out_file.Out(to_string(compiler.in_file.cur_line_num));
+            exit(0);
+        }
+        temp = term();
 
 
+        if (temp != NULL) {
+            if (termNode == NULL) seq = termNode = temp;
+            else {
+                seq->sibling = temp;
+                seq = temp;
+            }
+        }
+    }
+    return seq;
+}
+
+TreeNode *term()
+{
+    TreeNode *factorNode = factor();
+    TreeNode *seq = factorNode;
+    while ((token.getType() != ENDFILE) && (token.getType() != END)
+           && (token.getType() != ELSE) && (token.getType() != UNTIL)) {
+        TreeNode *temp;
+        //  { (*|/) term }
+        if (token.getType() == TIMES || token.getType() == DIVIDE)
+        {
+            temp->oper = token.getType();
+            temp->node_kind = OPER_NODE;
+            check(token.getType());
+        }
+        else {
+            compiler.out_file.Out("Error in line ");
+            compiler.out_file.Out(to_string(compiler.in_file.cur_line_num));
+            throw 0;
+        }
+        temp = term();
 
 
+        if (temp != NULL) {
+            if (factorNode == NULL) seq = factorNode = temp;
+            else {
+                seq->sibling = temp;
+                seq = temp;
+            }
+        }
+    }
+    return seq;
+}
 
+
+TreeNode * factor() // TODO make right associative
+{
+    TreeNode *newExpNode = newExpr();
+    TreeNode *seq = newExpNode;
+    while ((token.getType() != ENDFILE) && (token.getType() != END)
+           && (token.getType() != ELSE) && (token.getType() != UNTIL)) {
+        TreeNode *temp;
+        //  { ^ newExpr }
+        check(POWER);
+        temp = newExpr();
+
+
+        if (temp != NULL) {
+            if (newExpNode == NULL) seq = newExpNode = temp;
+            else {
+                seq->sibling = temp;
+                seq = temp;
+            }
+        }
+    }
+    return seq;
+
+
+//    TreeNode *stmt = newExpr();
+//    while(token.getType() == POWER){
+//        check(POWER);
+//        TreeNode *temp = newExpr();
+//        stmt->sibling = temp;
+//        temp = stmt;
+//    }
+}
+
+TreeNode *newExpr(){
+    TreeNode *expr = NULL;
+    switch (token.getType()){
+        case LEFT_PAREN:
+            check(LEFT_PAREN);
+            expr = mathExpr();
+            check(RIGHT_PAREN);
+            break;
+        case NUM:
+            expr = new TreeNode();
+            expr->node_kind = NUM_NODE;
+
+            expr->num = atoi(token.next_token.str);
+            check(NUM);
+            break;
+        case ID:
+            expr = new TreeNode();
+            expr->node_kind = ID_NODE;
+
+            expr->id = token.next_token.str;
+            check(ID);
+            break;
+        default:    //TODO encapsulate error behaviour
+            compiler.out_file.Out("Error in line ");
+            compiler.out_file.Out(to_string(compiler.in_file.cur_line_num));
+            throw 0;
+    }
+    return expr;
+}
+
+//Main function for the parser
+TreeNode *parse()
+{
+    TreeNode *root;
+    GetNextToken(&compiler, &token.next_token);
+    printf(token.next_token.str);
+    root = stmtSeq();
+    PrintTree(root);
+    if(token.getType() != ENDFILE) //TODO encapsulate error behaviour
+    {
+        compiler.out_file.Out("Incomplete syntax");
+        compiler.out_file.Out(to_string(compiler.in_file.cur_line_num));
+        throw 0;
+    }
+    return root;
+}
+
+int main(){
+    parse();
+}
 
 
 
