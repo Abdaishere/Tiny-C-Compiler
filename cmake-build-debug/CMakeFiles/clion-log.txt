@@ -1,4 +1,4 @@
-"C:\Program Files\JetBrains\CLion 2021.2.3\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2021.2.3/bin/ninja/win/ninja.exe" -G Ninja -S "C:\Users\El belkasy\CLionProjects\untitled5" -B "C:\Users\El belkasy\CLionProjects\untitled5\cmake-build-debug"
+"C:\Users\El belkasy\AppData\Local\JetBrains\Toolbox\apps\CLion\ch-0\222.4345.21\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Users/El belkasy/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/222.4345.21/bin/ninja/win/ninja.exe" -G Ninja -S "C:\Users\El belkasy\CLionProjects\untitled5" -B "C:\Users\El belkasy\CLionProjects\untitled5\cmake-build-debug"
 -- The C compiler identification is GNU 6.3.0
 -- The CXX compiler identification is GNU 6.3.0
 -- Detecting C compiler ABI info
