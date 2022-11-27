@@ -611,36 +611,24 @@ TreeNode *term() { //  { (*|/) term }
 }
 
 
-TreeNode *factor() //  { ^ newExpr }  // TODO make right associative
+TreeNode *factor() //  { ^ newExpr }
 {
     TreeNode *newExpNode = newExpr();
     TreeNode *seq = newExpNode;
-    while ((token.getType() != ENDFILE) && (token.getType() != END)
-           && (token.getType() != ELSE) && (token.getType() != UNTIL) && (token.getType() == POWER)) {
-        TreeNode *operNode;
 
-        operNode->oper = token.getType();
+
+    if((token.getType() != ENDFILE) && (token.getType() != END)
+       && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
+       (token.getType() == POWER))
+    {
+        TreeNode *operNode = new TreeNode();
+        operNode->oper = POWER;
         operNode->node_kind = OPER_NODE;
-        check(token.getType());
+        check(POWER);
 
-        if (operNode != NULL) {
-            if (newExpNode == NULL) seq = newExpNode = operNode;
-            else {
-                seq->sibling = operNode;
-                seq = operNode;
-            }
-        }
-
-        operNode = newExpr();
-
-
-        if (operNode != NULL) {
-            if (newExpNode == NULL) seq = newExpNode = operNode;
-            else {
-                seq->sibling = operNode;
-                seq = operNode;
-            }
-        }
+        operNode->child[0] = newExpNode;
+        operNode->child[1] = factor();
+        return operNode;
     }
     return seq;
 }
