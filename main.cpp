@@ -373,6 +373,9 @@ void PrintTree(TreeNode *node, int sh = 0) {
 }
 
 
+//Extended BNF:
+
+
 // program -> stmtseq
 // stmtseq -> stmt { ; stmt }
 // stmt -> ifstmt | repeatStmt | assignStmt | readStmt | writeStmt
@@ -386,6 +389,7 @@ void PrintTree(TreeNode *node, int sh = 0) {
 // term -> factor { (*|/) factor }    left associative
 // factor -> newexpr { ^ newexpr }    right associative
 // newexpr -> ( mathexpr ) | number | identifier
+
 
 TreeNode *stmt();
 
@@ -514,7 +518,6 @@ TreeNode *assignStmt() {
 
     check(ID);
     TreeNode *assignNode = new TreeNode();
-    assignNode->child[0] = iden;
 
     // (:=)
     check(ASSIGN);
@@ -524,7 +527,7 @@ TreeNode *assignStmt() {
     assignNode->id = (char *) malloc(MAX_LINE_LENGTH);
     strcpy(assignNode->id, iden->id);
 
-    assignNode->child[1] = expr();
+    assignNode->child[0] = expr();
     return assignNode;
 }
 
