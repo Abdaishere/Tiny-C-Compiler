@@ -558,16 +558,16 @@ TreeNode *expr()  { // (<|=)
     TreeNode *exprNode = new TreeNode();
 
     if (token.getType() == LESS_THAN || token.getType() == EQUAL) {
-        exprNode->child[0] = mExprNode;
 
         exprNode->oper = token.getType();
         exprNode->node_kind = OPER_NODE;
         check(token.getType());
 
+        exprNode->child[0] = mExprNode;
         exprNode->child[1] = mathExpr();
+        return exprNode;
     }
-    if(exprNode->child[0] == nullptr) return mExprNode;
-    return exprNode;
+    return mExprNode;
 }
 
 TreeNode *mathExpr() { //  { (+|-) term }
@@ -584,7 +584,7 @@ TreeNode *mathExpr() { //  { (+|-) term }
         check(token.getType());
 
         operNode->child[0] = termNode;
-        operNode->child[1] = term();
+        operNode->child[1] = mathExpr();
         return operNode;
     }
 
@@ -603,8 +603,9 @@ TreeNode *term() { //  { (*|/) term }
         operNode->node_kind = OPER_NODE;
         check(token.getType());
 
+
         operNode->child[0] = factorNode;
-        operNode->child[1] = factor();
+        operNode->child[1] = term();
         return operNode;
     }
     return factorNode;
