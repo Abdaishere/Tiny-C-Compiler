@@ -428,7 +428,6 @@ void check(TokenType expected) {
     }
 }
 
-// stmt
 TreeNode *stmtSeq() {
     TreeNode *Stmt = stmt();
     TreeNode *seq = Stmt;
@@ -508,7 +507,6 @@ TreeNode *repeatStmt() {
 }
 
 TreeNode *assignStmt() {
-
     TreeNode *iden = new TreeNode();
     iden->node_kind = ID_NODE;
     iden->id = (char *) malloc(MAX_LINE_LENGTH);
@@ -536,7 +534,10 @@ TreeNode *readStmt() {
 
     check(READ);
     if (token.getType() == ID)
-        readNode->id = token.next_token.str;
+    {
+        readNode->id = (char *) malloc(MAX_LINE_LENGTH);
+        strcpy(readNode->id,token.next_token.str);
+    }
     check(ID);
 
     return readNode;
@@ -572,70 +573,41 @@ TreeNode *expr()  { // (<|=)
 TreeNode *mathExpr() { //  { (+|-) term }
     TreeNode *termNode = term();
     TreeNode *seq = termNode;
-    while ((token.getType() != ENDFILE) && (token.getType() != END)
-           && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
-           (token.getType() == PLUS || token.getType() == MINUS)) {
 
-        TreeNode *operNode;
-
+    if((token.getType() != ENDFILE) && (token.getType() != END)
+       && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
+       (token.getType() == PLUS || token.getType() == MINUS))
+    {
+        TreeNode *operNode = new TreeNode();
         operNode->oper = token.getType();
         operNode->node_kind = OPER_NODE;
         check(token.getType());
 
-        if (operNode != NULL) {
-            if (termNode == NULL) seq = termNode = operNode;
-            else {
-                seq->sibling = operNode;
-                seq = operNode;
-            }
-        }
-
-        operNode = term();
-
-
-        if (operNode != NULL) {
-            if (termNode == NULL) seq = termNode = operNode;
-            else {
-                seq->sibling = operNode;
-                seq = operNode;
-            }
-        }
+        operNode->child[0] = termNode;
+        operNode->child[1] = term();
+        return operNode;
     }
+
     return seq;
 }
 
 TreeNode *term() { //  { (*|/) term }
     TreeNode *factorNode = factor();
-    TreeNode *seq = factorNode;
-    while ((token.getType() != ENDFILE) && (token.getType() != END)
-           && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
-           (token.getType() == TIMES || token.getType() == DIVIDE)) {
-        TreeNode *operNode;
 
+    if((token.getType() != ENDFILE) && (token.getType() != END)
+           && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
+           (token.getType() == TIMES || token.getType() == DIVIDE))
+    {
+        TreeNode *operNode = new TreeNode();
         operNode->oper = token.getType();
         operNode->node_kind = OPER_NODE;
         check(token.getType());
 
-        if (operNode != NULL) {
-            if (factorNode == NULL) seq = factorNode = operNode;
-            else {
-                seq->sibling = operNode;
-                seq = operNode;
-            }
-        }
-
-        operNode = term();
-
-
-        if (operNode != NULL) {
-            if (factorNode == NULL) seq = factorNode = operNode;
-            else {
-                seq->sibling = operNode;
-                seq = operNode;
-            }
-        }
+        operNode->child[0] = factorNode;
+        operNode->child[1] = factor();
+        return operNode;
     }
-    return seq;
+    return factorNode;
 }
 
 
