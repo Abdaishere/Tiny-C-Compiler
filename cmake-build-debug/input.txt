@@ -1,4 +1,11 @@
 if x < y
 then
 x := y
+else
+a:=b; c:=d
+end
+;
+if e < f
+then
+g:=h; i:=j
 end

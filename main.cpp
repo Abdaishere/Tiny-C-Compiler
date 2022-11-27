@@ -435,13 +435,16 @@ TreeNode *stmtSeq() {
         temp = stmt();
 
 
-        if (temp != NULL) {
-            if (Stmt == NULL) seq = Stmt = temp;
-            else {
-                seq->sibling = temp;
-                seq = temp;
-            }
-        }
+        Stmt->sibling = temp;
+        Stmt = Stmt->sibling;
+
+//        if (temp != NULL) {
+//            if (Stmt == NULL) seq = Stmt = temp;
+//            else {
+//                seq->sibling = temp;
+//                seq = temp;
+//            }
+//        }
     }
     return seq;
 }
@@ -478,6 +481,7 @@ TreeNode *ifStmt() {
     stmt->node_kind = IF_NODE;
 
     stmt->line_num = compiler.in_file.cur_line_num;
+    stmt->id = "IF";
     check(IF);
     stmt->child[0] = expr();
 
@@ -513,17 +517,23 @@ TreeNode *assignStmt() {
     stmt->node_kind = ID_NODE;
     stmt->id = (char *) malloc(MAX_LINE_LENGTH);
     strcpy(stmt->id, token.next_token.str);
-    check(ID);
 
+    check(ID);
     TreeNode *temp = new TreeNode();
     temp->child[0] = stmt;
 
     // (:=)
-    temp->oper = token.getType();
+    check(ASSIGN);
+    temp->oper = ASSIGN;
     temp->node_kind = ASSIGN_NODE;
-    check(token.getType());
 
-    temp->child[1] = expr();
+    temp->id = (char *) malloc(MAX_LINE_LENGTH);
+    strcpy(temp->id, stmt->id);
+
+
+    TreeNode* child1 = expr();
+
+    temp->child[1] = child1;
     return temp;
 }
 
@@ -568,6 +578,7 @@ TreeNode *expr() {
 
         temp->child[1] = mathExpr();
     }
+    if(temp->child[0]== nullptr) return stmt;
     return temp;
 }
 
