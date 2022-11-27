@@ -590,17 +590,6 @@ TreeNode *expr()  { // (<|=)    //left
         }
         return prev;
     }
-
-//    if (token.getType() == LESS_THAN || token.getType() == EQUAL) {
-//
-//        exprNode->oper = token.getType();
-//        exprNode->node_kind = OPER_NODE;
-//        check(token.getType());
-//
-//        exprNode->child[0] = mExprNode;
-//        exprNode->child[1] = mathExpr();
-//        return exprNode;
-//    }
     return mExprNode;
 }
 
@@ -641,21 +630,6 @@ TreeNode *mathExpr() { //  { (+|-) term }   //Left
         }
         return prev;
     }
-
-//    if((token.getType() != ENDFILE) && (token.getType() != END)
-//       && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
-//       (token.getType() == PLUS || token.getType() == MINUS))
-//    {
-//        TreeNode *operNode = new TreeNode();
-//        operNode->oper = token.getType();
-//        operNode->node_kind = OPER_NODE;
-//        check(token.getType());
-//
-//        operNode->child[0] = termNode;
-//        operNode->child[1] = mathExpr();
-//        return operNode;
-//    }
-
     return termNode;
 }
 
