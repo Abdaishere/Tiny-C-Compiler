@@ -403,7 +403,6 @@ TreeNode *writeStmt();
 
 TreeNode *expr();
 
-// TODO FINISH THE REST OF FUNCTIONS
 TreeNode *mathExpr();
 
 TreeNode *term();
@@ -412,14 +411,20 @@ TreeNode *factor();
 
 TreeNode *newExpr();
 
+void displayError(string message, int status = 1)
+{
+    compiler.out_file.Out(message);
+    throw status;
+}
+
 // check if expected and get the next token
 void check(TokenType expected) {
     if (token.getType() == expected)
         GetNextToken(&compiler, &token.next_token);
-    else {
-        compiler.out_file.Out("Error in line " + to_string(compiler.in_file.cur_line_num) + " ==> Expected : " +
+    else
+    {
+        displayError("Error in line " + to_string(compiler.in_file.cur_line_num) + " ==> Expected : " +
                               TokenTypeStr[expected] + " ==> Found : " + TokenTypeStr[token.getType()]);
-        throw 0;
     }
 }
 
@@ -434,17 +439,9 @@ TreeNode *stmtSeq() {
         check(SEMI_COLON);
         temp = stmt();
 
-
         Stmt->sibling = temp;
         Stmt = Stmt->sibling;
 
-//        if (temp != NULL) {
-//            if (Stmt == NULL) seq = Stmt = temp;
-//            else {
-//                seq->sibling = temp;
-//                seq = temp;
-//            }
-//        }
     }
     return seq;
 }
@@ -468,8 +465,8 @@ TreeNode *stmt() {
             stmt = readStmt();
             break;
         default:
-            compiler.out_file.Out("Wrong statement" + to_string(compiler.in_file.cur_line_num));
             check(token.getType());
+            displayError("Wrong statement in line " + to_string(compiler.in_file.cur_line_num));
             break;
     }
     return stmt;
@@ -510,142 +507,131 @@ TreeNode *repeatStmt() {
     return stmt;
 }
 
-// TODO not working
 TreeNode *assignStmt() {
 
-    TreeNode *stmt = new TreeNode();
-    stmt->node_kind = ID_NODE;
-    stmt->id = (char *) malloc(MAX_LINE_LENGTH);
-    strcpy(stmt->id, token.next_token.str);
+    TreeNode *iden = new TreeNode();
+    iden->node_kind = ID_NODE;
+    iden->id = (char *) malloc(MAX_LINE_LENGTH);
+    strcpy(iden->id, token.next_token.str);
 
     check(ID);
-    TreeNode *temp = new TreeNode();
-    temp->child[0] = stmt;
+    TreeNode *assignNode = new TreeNode();
+    assignNode->child[0] = iden;
 
     // (:=)
     check(ASSIGN);
-    temp->oper = ASSIGN;
-    temp->node_kind = ASSIGN_NODE;
+    assignNode->oper = ASSIGN;
+    assignNode->node_kind = ASSIGN_NODE;
 
-    temp->id = (char *) malloc(MAX_LINE_LENGTH);
-    strcpy(temp->id, stmt->id);
+    assignNode->id = (char *) malloc(MAX_LINE_LENGTH);
+    strcpy(assignNode->id, iden->id);
 
-
-    TreeNode* child1 = expr();
-
-    temp->child[1] = child1;
-    return temp;
+    assignNode->child[1] = expr();
+    return assignNode;
 }
 
 TreeNode *readStmt() {
-    TreeNode *stmt = new TreeNode();
-    stmt->node_kind = READ_NODE;
+    TreeNode *readNode = new TreeNode();
+    readNode->node_kind = READ_NODE;
 
     check(READ);
     if (token.getType() == ID)
-        stmt->id = token.next_token.str;
+        readNode->id = token.next_token.str;
     check(ID);
 
-    return stmt;
+    return readNode;
 }
 
 TreeNode *writeStmt() {
-    TreeNode *stmt = new TreeNode();
-    stmt->node_kind = WRITE_NODE;
+    TreeNode *writeNode = new TreeNode();
+    writeNode->node_kind = WRITE_NODE;
 
     check(WRITE);
-    stmt->child[0] = expr();
+    writeNode->child[0] = expr();
 
-    return stmt;
+    return writeNode;
 }
 
-/*
- * [If]
-     [Oper][LessThan]
-      [ID][x]
-      [ID][y]
- */
-TreeNode *expr() {
-    TreeNode *stmt = mathExpr();
-    TreeNode *temp = new TreeNode();
+TreeNode *expr()  { // (<|=)
+    TreeNode *mExprNode = mathExpr();
+    TreeNode *exprNode = new TreeNode();
 
     if (token.getType() == LESS_THAN || token.getType() == EQUAL) {
-        temp->child[0] = stmt;
-        // (<|=)
-        temp->oper = token.getType();
-        temp->node_kind = OPER_NODE;
+        exprNode->child[0] = mExprNode;
+
+        exprNode->oper = token.getType();
+        exprNode->node_kind = OPER_NODE;
         check(token.getType());
 
-        temp->child[1] = mathExpr();
+        exprNode->child[1] = mathExpr();
     }
-    if(temp->child[0]== nullptr) return stmt;
-    return temp;
+    if(exprNode->child[0] == nullptr) return mExprNode;
+    return exprNode;
 }
 
-TreeNode *mathExpr() {
+TreeNode *mathExpr() { //  { (+|-) term }
     TreeNode *termNode = term();
     TreeNode *seq = termNode;
     while ((token.getType() != ENDFILE) && (token.getType() != END)
            && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
            (token.getType() == PLUS || token.getType() == MINUS)) {
-        TreeNode *temp;
 
-        //  { (+|-) term }
-        temp->oper = token.getType();
-        temp->node_kind = OPER_NODE;
+        TreeNode *operNode;
+
+        operNode->oper = token.getType();
+        operNode->node_kind = OPER_NODE;
         check(token.getType());
 
-        if (temp != NULL) {
-            if (termNode == NULL) seq = termNode = temp;
+        if (operNode != NULL) {
+            if (termNode == NULL) seq = termNode = operNode;
             else {
-                seq->sibling = temp;
-                seq = temp;
+                seq->sibling = operNode;
+                seq = operNode;
             }
         }
 
-        temp = term();
+        operNode = term();
 
 
-        if (temp != NULL) {
-            if (termNode == NULL) seq = termNode = temp;
+        if (operNode != NULL) {
+            if (termNode == NULL) seq = termNode = operNode;
             else {
-                seq->sibling = temp;
-                seq = temp;
+                seq->sibling = operNode;
+                seq = operNode;
             }
         }
     }
     return seq;
 }
 
-TreeNode *term() {
+TreeNode *term() { //  { (*|/) term }
     TreeNode *factorNode = factor();
     TreeNode *seq = factorNode;
     while ((token.getType() != ENDFILE) && (token.getType() != END)
            && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
            (token.getType() == TIMES || token.getType() == DIVIDE)) {
-        TreeNode *temp;
+        TreeNode *operNode;
 
-        //  { (*|/) term }
-        temp->oper = token.getType();
-        temp->node_kind = OPER_NODE;
+        operNode->oper = token.getType();
+        operNode->node_kind = OPER_NODE;
         check(token.getType());
 
-        if (temp != NULL) {
-            if (factorNode == NULL) seq = factorNode = temp;
+        if (operNode != NULL) {
+            if (factorNode == NULL) seq = factorNode = operNode;
             else {
-                seq->sibling = temp;
-                seq = temp;
+                seq->sibling = operNode;
+                seq = operNode;
             }
         }
 
-        temp = term();
+        operNode = term();
 
 
-        if (temp != NULL) {
-            if (factorNode == NULL) seq = factorNode = temp;
+        if (operNode != NULL) {
+            if (factorNode == NULL) seq = factorNode = operNode;
             else {
-                seq->sibling = temp;
-                seq = temp;
+                seq->sibling = operNode;
+                seq = operNode;
             }
         }
     }
@@ -653,48 +639,38 @@ TreeNode *term() {
 }
 
 
-TreeNode *factor() // TODO make right associative
+TreeNode *factor() //  { ^ newExpr }  // TODO make right associative
 {
     TreeNode *newExpNode = newExpr();
     TreeNode *seq = newExpNode;
     while ((token.getType() != ENDFILE) && (token.getType() != END)
            && (token.getType() != ELSE) && (token.getType() != UNTIL) && (token.getType() == POWER)) {
-        TreeNode *temp;
+        TreeNode *operNode;
 
-        //  { ^ newExpr }
-        temp->oper = token.getType();
-        temp->node_kind = OPER_NODE;
+        operNode->oper = token.getType();
+        operNode->node_kind = OPER_NODE;
         check(token.getType());
 
-        if (temp != NULL) {
-            if (newExpNode == NULL) seq = newExpNode = temp;
+        if (operNode != NULL) {
+            if (newExpNode == NULL) seq = newExpNode = operNode;
             else {
-                seq->sibling = temp;
-                seq = temp;
+                seq->sibling = operNode;
+                seq = operNode;
             }
         }
 
-        temp = newExpr();
+        operNode = newExpr();
 
 
-        if (temp != NULL) {
-            if (newExpNode == NULL) seq = newExpNode = temp;
+        if (operNode != NULL) {
+            if (newExpNode == NULL) seq = newExpNode = operNode;
             else {
-                seq->sibling = temp;
-                seq = temp;
+                seq->sibling = operNode;
+                seq = operNode;
             }
         }
     }
     return seq;
-
-
-//    TreeNode *stmt = newExpr();
-//    while(token.getType() == POWER){
-//        check(POWER);
-//        TreeNode *temp = newExpr();
-//        stmt->sibling = temp;
-//        temp = stmt;
-//    }
 }
 
 TreeNode *newExpr() {
@@ -719,29 +695,37 @@ TreeNode *newExpr() {
             strcpy(expr->id, token.next_token.str);
             check(ID);
             break;
-        default:    //TODO encapsulate error behaviour
-            compiler.out_file.Out("Wrong Identifier " + to_string(compiler.in_file.cur_line_num));
-            throw 0;
+        default:
+            displayError("Wrong Identifier " + to_string(compiler.in_file.cur_line_num));
     }
     return expr;
 }
 
-//Main function for the parser
+//Driver function
 TreeNode *parse() {
     TreeNode *root;
     GetNextToken(&compiler, &token.next_token);
     root = stmtSeq();
     PrintTree(root);
-    if (token.getType() != ENDFILE) //TODO encapsulate error behaviour
-    {
-        compiler.out_file.Out("Incomplete syntax" + to_string(compiler.in_file.cur_line_num));
-        throw 0;
-    }
+
+    if (token.getType() != ENDFILE)
+        displayError("Incomplete syntax" + to_string(compiler.in_file.cur_line_num));
+
     return root;
 }
 
-int main() {
-    parse();
+int main()
+{
+    try
+    {
+        parse();
+    }
+    catch (int status)
+    {
+        return status;
+    }
+
+    return 0;
 }
 
 
