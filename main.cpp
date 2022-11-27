@@ -320,7 +320,7 @@ const char *ExprDataTypeStr[] =
                 "Void", "Integer", "Boolean"
         };
 
-#define MAX_CHILDREN 3
+#define MAX_CHILDREN 7
 
 struct TreeNode {
     TreeNode *child[MAX_CHILDREN];
@@ -553,66 +553,154 @@ TreeNode *writeStmt() {
     return writeNode;
 }
 
-TreeNode *expr()  { // (<|=)
+TreeNode *expr()  { // (<|=)    //left
     TreeNode *mExprNode = mathExpr();
-    TreeNode *exprNode = new TreeNode();
+    TreeNode *root = new TreeNode();
 
-    if (token.getType() == LESS_THAN || token.getType() == EQUAL) {
+    int cld = 0;
+    root->child[cld++] = mExprNode;
 
-        exprNode->oper = token.getType();
-        exprNode->node_kind = OPER_NODE;
-        check(token.getType());
-
-        exprNode->child[0] = mExprNode;
-        exprNode->child[1] = mathExpr();
-        return exprNode;
-    }
-    return mExprNode;
-}
-
-TreeNode *mathExpr() { //  { (+|-) term }
-    TreeNode *termNode = term();
-    TreeNode *seq = termNode;
-
-    if((token.getType() != ENDFILE) && (token.getType() != END)
-       && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
-       (token.getType() == PLUS || token.getType() == MINUS))
+    while ((token.getType() != ENDFILE) && (token.getType() != END)
+           && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
+           (token.getType() == EQUAL || token.getType() == LESS_THAN))
     {
         TreeNode *operNode = new TreeNode();
         operNode->oper = token.getType();
         operNode->node_kind = OPER_NODE;
+        root->child[cld++] = operNode;
         check(token.getType());
 
-        operNode->child[0] = termNode;
-        operNode->child[1] = mathExpr();
-        return operNode;
+        mExprNode = factor();
+        root->child[cld++] = mExprNode;
     }
 
-    return seq;
+    if(cld>1)
+    {
+        TreeNode *prev = root->child[0];
+
+        for (int i=1; i<cld; i+=2)
+        {
+            TreeNode *oper = root->child[i];
+            TreeNode *curr = root->child[i+1];
+
+            oper->child[0] = prev;
+            oper->child[1] = curr;
+
+            prev = oper;
+        }
+        return prev;
+    }
+
+//    if (token.getType() == LESS_THAN || token.getType() == EQUAL) {
+//
+//        exprNode->oper = token.getType();
+//        exprNode->node_kind = OPER_NODE;
+//        check(token.getType());
+//
+//        exprNode->child[0] = mExprNode;
+//        exprNode->child[1] = mathExpr();
+//        return exprNode;
+//    }
+    return mExprNode;
 }
 
-TreeNode *term() { //  { (*|/) term }
+TreeNode *mathExpr() { //  { (+|-) term }   //Left
+    TreeNode *termNode = term();
+    TreeNode *root = new TreeNode();
+
+    int cld = 0;
+    root->child[cld++] = termNode;
+
+    while ((token.getType() != ENDFILE) && (token.getType() != END)
+           && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
+           (token.getType() == MINUS || token.getType() == PLUS))
+    {
+        TreeNode *operNode = new TreeNode();
+        operNode->oper = token.getType();
+        operNode->node_kind = OPER_NODE;
+        root->child[cld++] = operNode;
+        check(token.getType());
+
+        termNode = factor();
+        root->child[cld++] = termNode;
+    }
+
+    if(cld>1)
+    {
+        TreeNode *prev = root->child[0];
+
+        for (int i=1; i<cld; i+=2)
+        {
+            TreeNode *oper = root->child[i];
+            TreeNode *curr = root->child[i+1];
+
+            oper->child[0] = prev;
+            oper->child[1] = curr;
+
+            prev = oper;
+        }
+        return prev;
+    }
+
+//    if((token.getType() != ENDFILE) && (token.getType() != END)
+//       && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
+//       (token.getType() == PLUS || token.getType() == MINUS))
+//    {
+//        TreeNode *operNode = new TreeNode();
+//        operNode->oper = token.getType();
+//        operNode->node_kind = OPER_NODE;
+//        check(token.getType());
+//
+//        operNode->child[0] = termNode;
+//        operNode->child[1] = mathExpr();
+//        return operNode;
+//    }
+
+    return termNode;
+}
+
+TreeNode *term() { //  { (*|/) term }   //left
+    TreeNode *root = new TreeNode();
     TreeNode *factorNode = factor();
 
-    if((token.getType() != ENDFILE) && (token.getType() != END)
+    int cld = 0;
+    root->child[cld++] = factorNode;
+
+    while ((token.getType() != ENDFILE) && (token.getType() != END)
            && (token.getType() != ELSE) && (token.getType() != UNTIL) &&
            (token.getType() == TIMES || token.getType() == DIVIDE))
     {
         TreeNode *operNode = new TreeNode();
         operNode->oper = token.getType();
         operNode->node_kind = OPER_NODE;
+        root->child[cld++] = operNode;
         check(token.getType());
 
+        factorNode = factor();
+        root->child[cld++] = factorNode;
+    }
 
-        operNode->child[0] = factorNode;
-        operNode->child[1] = term();
-        return operNode;
+    if(cld>1)
+    {
+        TreeNode *prev = root->child[0];
+
+        for (int i=1; i<cld; i+=2)
+        {
+            TreeNode *oper = root->child[i];
+            TreeNode *curr = root->child[i+1];
+
+            oper->child[0] = prev;
+            oper->child[1] = curr;
+
+            prev = oper;
+        }
+        return prev;
     }
     return factorNode;
 }
 
 
-TreeNode *factor() //  { ^ newExpr }
+TreeNode *factor() //  { ^ newExpr }  //Right
 {
     TreeNode *newExpNode = newExpr();
     TreeNode *seq = newExpNode;
