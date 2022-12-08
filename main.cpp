@@ -795,15 +795,16 @@ SymbolTable *createSymbolTable(const TreeNode *Root) {
 
 }
 
-TreeNode *createSyntaxTree(TreeNode *Root) {
+// return the output on the input parameter
+TreeNode *convertToSyntaxTree(TreeNode *Root) {
 
 }
 
 
 int main() {
     CompilerInfo *compiler = new CompilerInfo("input.txt", "output.txt", "debug.txt");
-    TreeNode *root = Parse(compiler);
-    createSyntaxTree(root);
-    createSymbolTable(root);
-
+    TreeNode *parseTreeRoot = Parse(compiler);
+    createSymbolTable(parseTreeRoot);
+    TreeNode *SyntaxTreeRoot = convertToSyntaxTree(parseTreeRoot);
+    PrintTree(SyntaxTreeRoot);
 }
