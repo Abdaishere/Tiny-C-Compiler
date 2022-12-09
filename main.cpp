@@ -789,14 +789,22 @@ struct SymbolTable {
     }
 };
 
-// too easy lol
-SymbolTable *createSymbolTable(const TreeNode *Root, SymbolTable *t) {
+//First: Construct symbol table
+SymbolTable *createSymbolTable(const TreeNode *Root, SymbolTable *t)
+{
+    //Add variable entry to table
     if (Root->node_kind == ID_NODE || Root->node_kind == READ_NODE || Root->node_kind == ASSIGN_NODE) {
         t->Insert(Root->id, Root->line_num);
     }
 
-    for (int i = 0; i < MAX_CHILDREN; i++) if (Root->child[i]) createSymbolTable(Root->child[i], t);
-    if (Root->sibling) createSymbolTable(Root->sibling, t);
+    //traverse to children and siblings
+    for (int i = 0; i < MAX_CHILDREN; i++)
+        if (Root->child[i]) createSymbolTable(Root->child[i], t);
+
+    if (Root->sibling)
+        createSymbolTable(Root->sibling, t);
+
+    //return the symbol table
     return t;
 }
 
@@ -815,6 +823,7 @@ void addTypesToSyntaxTree(TreeNode *root)
     {
         root->expr_data_type = INTEGER;
     }
+
     //traverse to children and siblings
     for (auto i : root->child)
         if (i)
@@ -836,10 +845,21 @@ void addTypesToSyntaxTree(TreeNode *root)
 
 
 int main() {
+    //Define compiler info
     CompilerInfo *compiler = new CompilerInfo("input.txt", "output.txt", "debug.txt");
+
+    //Define what to print
+    bool printSymTable = false;
+    bool printLabeledSynTree = false;
+
+    //construct the parse tree
     TreeNode *parseTreeRoot = Parse(compiler);
+
+    //construct the symbol table
     SymbolTable *symbolTable = createSymbolTable(parseTreeRoot, new SymbolTable());
-    symbolTable->Print();
+    if(printSymTable) symbolTable->Print();
+
+    //add data types to the tree nodes
     addTypesToSyntaxTree(parseTreeRoot);
-    PrintTree(parseTreeRoot);
+    if(printLabeledSynTree) PrintTree(parseTreeRoot);
 }
