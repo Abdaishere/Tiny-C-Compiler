@@ -48,8 +48,7 @@ void Copy(char *a, const char *b, int n = 0) {
     if (n > 0) {
         strncpy(a, b, n);
         a[n] = 0;
-    }
-    else strcpy(a, b);
+    } else strcpy(a, b);
 }
 
 void AllocateAndCopy(char **a, const char *b) {
@@ -790,9 +789,15 @@ struct SymbolTable {
     }
 };
 
-// TODO for ABDA
-SymbolTable *createSymbolTable(const TreeNode *Root) {
+// too easy lol
+SymbolTable *createSymbolTable(const TreeNode *Root, SymbolTable *t) {
+    if (Root->node_kind == ID_NODE || Root->node_kind == READ_NODE || Root->node_kind == ASSIGN_NODE) {
+        t->Insert(Root->id, Root->line_num);
+    }
 
+    for (int i = 0; i < MAX_CHILDREN; i++) if (Root->child[i]) createSymbolTable(Root->child[i], t);
+    if (Root->sibling) createSymbolTable(Root->sibling, t);
+    return t;
 }
 
 // return the output on the input parameter
@@ -804,7 +809,8 @@ TreeNode *convertToSyntaxTree(TreeNode *Root) {
 int main() {
     CompilerInfo *compiler = new CompilerInfo("input.txt", "output.txt", "debug.txt");
     TreeNode *parseTreeRoot = Parse(compiler);
-    createSymbolTable(parseTreeRoot);
+    SymbolTable *symbolTable = createSymbolTable(parseTreeRoot, new SymbolTable());
+    symbolTable->Print();
     TreeNode *SyntaxTreeRoot = convertToSyntaxTree(parseTreeRoot);
     PrintTree(SyntaxTreeRoot);
 }
