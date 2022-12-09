@@ -800,8 +800,37 @@ SymbolTable *createSymbolTable(const TreeNode *Root, SymbolTable *t) {
     return t;
 }
 
-// return the output on the input parameter
-TreeNode *convertToSyntaxTree(TreeNode *Root) {
+//Second: add data types to the tree nodes
+void addTypesToSyntaxTree(TreeNode *root)
+{
+    //Add data types
+    if(root->node_kind == OPER_NODE)
+    {
+        if(root->oper == LESS_THAN || root->oper == EQUAL)
+            root->expr_data_type = BOOLEAN;
+        else
+            root->expr_data_type = INTEGER;
+    }
+    else if(root->node_kind == NUM_NODE || root->node_kind == ID_NODE)
+    {
+        root->expr_data_type = INTEGER;
+    }
+    //traverse to children and siblings
+    for (auto i : root->child)
+        if (i)
+            addTypesToSyntaxTree(i);
+    if (root->sibling)
+        addTypesToSyntaxTree(root->sibling);
+
+    //if statement type checking
+    if(root->node_kind == IF_NODE && root->child[0])
+    {
+        if(root->child[0]->expr_data_type != BOOLEAN)
+        {
+            printf("Error, an \"if\" should be followed by a Boolean\n");
+            throw 1;
+        }
+    }
 
 }
 
@@ -811,6 +840,6 @@ int main() {
     TreeNode *parseTreeRoot = Parse(compiler);
     SymbolTable *symbolTable = createSymbolTable(parseTreeRoot, new SymbolTable());
     symbolTable->Print();
-    TreeNode *SyntaxTreeRoot = convertToSyntaxTree(parseTreeRoot);
-    PrintTree(SyntaxTreeRoot);
+    addTypesToSyntaxTree(parseTreeRoot);
+    PrintTree(parseTreeRoot);
 }
