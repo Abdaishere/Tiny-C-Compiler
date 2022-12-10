@@ -343,11 +343,10 @@ struct TreeNode {
 
     NodeKind node_kind;
 
-    union {
-        TokenType oper;
-        int num;
-        char *id;
-    }; // defined for expression/int/identifier only
+    TokenType oper;
+    int num;
+    char *id;
+    // defined for expression/int/identifier only
     ExprDataType expr_data_type; // defined for expression/int/identifier only
 
     int line_num;
@@ -866,8 +865,9 @@ void evaluateTree(TreeNode *root, SymbolTable *symTable) {
         int value = symTable->getValue(varName);
         root->num = value;
     }
-        //Math operator nodes
-    else if (root->node_kind == OPER_NODE) {
+    //Math operator nodes
+    else if (root->node_kind == OPER_NODE)
+    {
         //check children availability
         if (!root->child[0] || !root->child[1]) {
             printf("Incomplete code in an operation node!\n");
@@ -881,12 +881,18 @@ void evaluateTree(TreeNode *root, SymbolTable *symTable) {
         evaluateTree(rhs, symTable);
 
         //Calculate root's value
-        switch (root->oper) {
+        switch (root->oper)
+        {
             case LESS_THAN:
                 if (lhs->num < rhs->num)
                     root->num = 1;
                 else
                     root->num = 0;
+                break;
+            case EQUAL:
+                if (lhs->num == rhs->num)
+                    root->num = 1;
+                else root->num = 0;
                 break;
             case PLUS:
                 root->num = lhs->num + rhs->num;
@@ -910,49 +916,33 @@ void evaluateTree(TreeNode *root, SymbolTable *symTable) {
                 break;
         }
     }
-        //Assign nodes TODO not working
-    else if (root->node_kind == ASSIGN_NODE) {
-
-//        pci->debug_file.Out("Start AssignStmt");
-//
-//        TreeNode *tree = new TreeNode;
-//        tree->node_kind = ASSIGN_NODE;
-//        tree->line_num = pci->in_file.cur_line_num;
-//
-//        if (ppi->next_token.type == ID) AllocateAndCopy(&tree->id, ppi->next_token.str);
-//        Match(pci, ppi, ID);
-//        Match(pci, ppi, ASSIGN);
-//        tree->child[0] = Expr(pci, ppi);
-//
-//        pci->debug_file.Out("End AssignStmt");
-
-        //check children availability
-        if (!root->child[0]) {
+    else if (root->node_kind == ASSIGN_NODE)
+    {
+        if (!root->child[0])
+        {
             printf("Incomplete code in an assign node!\n");
             throw 1;
         }
-        TreeNode *lhs = root;
-        TreeNode *rhs = root->child[1];
+        TreeNode *rhs = root->child[0];
 
         //Get right-hand side value
         evaluateTree(rhs, symTable);
         int newVal = rhs->num;
 
         //execute the assign function
-        const char *varName = lhs->id;
+        const char *varName = root->id;
         symTable->changeValue(varName, newVal);
 
         //set value of root to allow chaining of assign operators
         root->num = rhs->num;
     }
-        //Read node
+    //Read node
     else if (root->node_kind == READ_NODE) {
         //Get input from terminal
         char *varName = root->id;
         printf("Enter %s: ", varName);
         int input;
         std::cin >> input;
-        printf("\n");
 
         //Load value to the variable
         symTable->changeValue(varName, input);
@@ -960,7 +950,7 @@ void evaluateTree(TreeNode *root, SymbolTable *symTable) {
         //set value of root to allow chaining of assign operators
         root->num = input;
     }
-        //Write node
+    //Write node
     else if (root->node_kind == WRITE_NODE) {
         //check child availability
         if (!root->child[0]) {
@@ -976,29 +966,28 @@ void evaluateTree(TreeNode *root, SymbolTable *symTable) {
         //Print to terminal
         printf("val: %d\n", val);
     }
-        //If node
+    //If node
     else if (root->node_kind == IF_NODE) {
         evaluateTree(root->child[0], symTable);
-        cout << root->child[0]->num;
         if (root->child[0]->num == 1) {
             evaluateTree(root->child[1], symTable);
         } else if (root->child[0]->num == 0) {
             if (root->child[2] != nullptr)
                 evaluateTree(root->child[2], symTable);
         } else {
-            printf("Incomplete value in an IF statement!\n");
+            printf("Wrong boolean value!\n");
             throw 1;
         }
     }
-        //Repeat node
+    //Repeat node
     else if (root->node_kind == REPEAT_NODE) {
         do {
             evaluateTree(root->child[0], symTable);
             evaluateTree(root->child[1], symTable);
-        } while (root->child[1]->num);
+        } while (root->child[1]->num==0);
 
     }
-        //Num nodes (added just for clarity and code completeness)
+    //Num nodes (added just for clarity and code completeness)
     else if (root->node_kind == NUM_NODE) {
         return;
     }
