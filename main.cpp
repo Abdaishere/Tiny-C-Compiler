@@ -967,24 +967,39 @@ void evaluateTree(TreeNode *root, SymbolTable *symTable) {
         printf("val: %d\n", val);
     }
     //If node
-    else if (root->node_kind == IF_NODE) {
+    else if (root->node_kind == IF_NODE)
+    {
+        //Evaluate the testing condition
         evaluateTree(root->child[0], symTable);
-        if (root->child[0]->num == 1) {
+        //check the testing value and execute then statements
+        if (root->child[0]->num == 1)
+        {
             evaluateTree(root->child[1], symTable);
-        } else if (root->child[0]->num == 0) {
+        }
+        //Execute else statements
+        else if (root->child[0]->num == 0)
+        {
             if (root->child[2] != nullptr)
                 evaluateTree(root->child[2], symTable);
-        } else {
+        }
+        //error if not boolean
+        else
+        {
             printf("Wrong boolean value!\n");
             throw 1;
         }
     }
     //Repeat node
-    else if (root->node_kind == REPEAT_NODE) {
-        do {
+    else if (root->node_kind == REPEAT_NODE)
+    {
+        //Evaluate the repeat statements
+        do
+        {
             evaluateTree(root->child[0], symTable);
             evaluateTree(root->child[1], symTable);
-        } while (root->child[1]->num==0);
+        }
+        //while the test returns false
+        while (root->child[1]->num==0);
 
     }
     //Num nodes (added just for clarity and code completeness)
@@ -1018,10 +1033,10 @@ int main() {
 
     //Define what to print
     int choice = 0;
-//    choice = getPrintPreference();
     choice = 0;
+    choice = getPrintPreference();
     bool printSymTable = choice % 2;
-    bool printLabeledSynTree = (choice << 1) % 2;
+    bool printLabeledSynTree = (choice >> 1) % 2;
 
     //construct the parse tree
     TreeNode *parseTreeRoot = Parse(compiler);
