@@ -871,8 +871,16 @@ void addTypesToSyntaxTree(TreeNode *root)
 void evaluateTree(TreeNode* root, SymbolTable* symTable)
 {
     //Calculate values after applying operators
+    //ID nodes
+    if(root->node_kind == ID_NODE)
+    {
+        //Get variable name
+        char* varName = root->id;
+        int value = symTable->getValue(varName);
+        root->num = value;
+    }
     //Math operator nodes
-    if(root->node_kind==OPER_NODE)
+    else if(root->node_kind==OPER_NODE)
     {
         //check children availability
         if(!root->child[0] || !root->child[1])
@@ -968,8 +976,8 @@ void evaluateTree(TreeNode* root, SymbolTable* symTable)
         TreeNode* rhs = root->child[0];
 
         //Get the value
-        char* varName = rhs->id;
-        int val = symTable->getValue(varName);
+        evaluateTree(rhs, symTable);
+        int val = rhs->num;
 
         //Print to terminal
         printf("%d\n", val);
@@ -984,8 +992,8 @@ void evaluateTree(TreeNode* root, SymbolTable* symTable)
     {
         //TODO evaluate repeat node
     }
-    //Num and id nodes (added just for clarity and code completeness)
-    else if(root->node_kind == NUM_NODE || root->node_kind == ID_NODE)
+    //Num nodes (added just for clarity and code completeness)
+    else if(root->node_kind == NUM_NODE)
     {
         return;
     }
