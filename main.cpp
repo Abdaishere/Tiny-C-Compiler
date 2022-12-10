@@ -870,7 +870,6 @@ void addTypesToSyntaxTree(TreeNode *root)
 //Third: Run a simulation of the compilation of the code as if the program is actually running
 void evaluateTree(TreeNode* root, SymbolTable* symTable)
 {
-    //Calculate values after applying operators
     //ID nodes
     if(root->node_kind == ID_NODE)
     {
@@ -954,11 +953,13 @@ void evaluateTree(TreeNode* root, SymbolTable* symTable)
     else if(root->node_kind == READ_NODE)
     {
         //Get input from terminal
+        char* varName = root->id;
+        printf("Enter %s: ",varName);
         int input;
         std::cin>>input;
+        printf("\n");
 
         //Load value to the variable
-        char* varName = root->id;
         symTable->changeValue(varName, input);
 
         //set value of root to allow chaining of assign operators
@@ -980,7 +981,7 @@ void evaluateTree(TreeNode* root, SymbolTable* symTable)
         int val = rhs->num;
 
         //Print to terminal
-        printf("%d\n", val);
+        printf("val: %d\n", val);
     }
     //If node
     else if(root->node_kind == IF_NODE)
@@ -1025,7 +1026,7 @@ int main() {
 
     //Define what to print
     int choice = 0;
-//    choice = getPrintPreference();
+    choice = getPrintPreference();
     bool printSymTable = choice % 2;
     bool printLabeledSynTree = (choice<<1)%2;
 
