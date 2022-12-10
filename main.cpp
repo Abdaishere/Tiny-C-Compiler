@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
+#include <iostream>
 
 using namespace std;
 
@@ -690,6 +692,7 @@ struct LineLocation {
 struct VariableInfo {
     char *name;
     int memloc;
+    int value=0;
     LineLocation *head_line; // the head of linked list of source line locations
     LineLocation *tail_line; // the tail of linked list of source line locations
     VariableInfo *next_var;  // the next variable in the linked list in the same hash bucket of the symbol table
@@ -752,6 +755,27 @@ struct SymbolTable {
         else prev->next_var = vi;
     }
 
+    void changeValue(const char* name, int newVal)
+    {
+        auto varInfo = Find(name);
+        if(varInfo== nullptr)
+        {
+            printf("Variable %s not recognised!", name);
+            throw 1;
+        }
+        varInfo->value = newVal;
+    }
+
+    int getValue(const char* name)
+    {
+        auto varInfo = Find(name);
+        if(varInfo== nullptr)
+        {
+            printf("Variable %s not recognised!", name);
+            throw 1;
+        }
+        return varInfo->value;
+    }
     void Print() {
         int i;
         for (i = 0; i < SYMBOL_HASH_SIZE; i++) {
@@ -843,18 +867,162 @@ void addTypesToSyntaxTree(TreeNode *root)
 
 }
 
+//Third: Run a simulation of the compilation of the code as if the program is actually running
+void evaluateTree(TreeNode* root, SymbolTable* symTable)
+{
+    //Calculate values after applying operators
+    //Math operator nodes
+    if(root->node_kind==OPER_NODE)
+    {
+        //check children availability
+        if(!root->child[0] || !root->child[1])
+        {
+            printf("Incomplete code in an operation node!\n");
+            throw 1;
+        }
+        TreeNode* lhs = root->child[0];
+        TreeNode* rhs = root->child[1];
+
+        //Evaluate left and right hand side values
+        evaluateTree(lhs, symTable);
+        evaluateTree(root->child[1], symTable);
+
+        //Calculate root's value
+        switch (root->oper)
+        {
+            case LESS_THAN:
+                if(lhs->num < rhs->num)
+                    root->num = 1;
+                else
+                    root->num = 0;
+                break;
+            case PLUS:
+                root->num = lhs->num + rhs->num;
+                break;
+            case MINUS:
+                root->num = lhs->num - rhs->num;
+                break;
+            case TIMES:
+                root->num = lhs->num * rhs->num;
+                break;
+            case DIVIDE:
+                //Check for zero division
+                if(rhs->num == 0)
+                {
+                    printf("Cannot divide by zero!\n");
+                    throw 1;
+                }
+                root->num = lhs->num / rhs->num;
+                break;
+            case POWER:
+                root->num = (int) pow(lhs->num , rhs->num);
+                break;
+        }
+    }
+    //Assign nodes
+    else if(root->node_kind == ASSIGN_NODE)
+    {
+        //check children availability
+        if(!root->child[0] || !root->child[1])
+        {
+            printf("Incomplete code in an assign node!\n");
+            throw 1;
+        }
+        TreeNode* lhs = root->child[0];
+        TreeNode* rhs = root->child[1];
+
+        //Get right-hand side value
+        evaluateTree(rhs, symTable);
+        int newVal = rhs->num;
+
+        //execute the assign function
+        const char* varName = lhs->id;
+        symTable->changeValue(varName,newVal);
+
+        //set value of root to allow chaining of assign operators
+        root->num = rhs->num;
+    }
+    //Read node
+    else if(root->node_kind == READ_NODE)
+    {
+        //Get input from terminal
+        int input;
+        std::cin>>input;
+
+        //Load value to the variable
+        char* varName = root->id;
+        symTable->changeValue(varName, input);
+
+        //set value of root to allow chaining of assign operators
+        root->num = input;
+    }
+    //Write node
+    else if(root->node_kind == WRITE_NODE)
+    {
+        //check child availability
+        if(!root->child[0])
+        {
+            printf("Incomplete code in a write node!\n");
+            throw 1;
+        }
+        TreeNode* rhs = root->child[0];
+
+        //Get the value
+        char* varName = rhs->id;
+        int val = symTable->getValue(varName);
+
+        //Print to terminal
+        printf("%d\n", val);
+    }
+    //If node
+    else if(root->node_kind == IF_NODE)
+    {
+        //TODO evaluate if node
+    }
+    //Repeat node
+    else if(root->node_kind == REPEAT_NODE)
+    {
+        //TODO evaluate repeat node
+    }
+    //Num and id nodes (added just for clarity and code completeness)
+    else if(root->node_kind == NUM_NODE || root->node_kind == ID_NODE)
+    {
+        return;
+    }
+
+    //finally, evaluate siblings
+    if (root->sibling)
+        evaluateTree(root->sibling, symTable);
+}
+
+int getPrintPreference()
+{
+    printf("Do you want to print internal data structures?\n");
+    printf("0   => print none\n");
+    printf("1   => print the symbol table\n");
+    printf("2   => print the labeled syntax tree\n");
+    printf("3   => print both\n");
+
+    int choice;
+    cin >> choice;
+    choice = choice >3? choice=3 : choice=choice;   //clamp value
+    choice = choice <0? choice=0 : choice=choice;
+
+    return choice;
+}
 
 int main() {
     //Define compiler info
     CompilerInfo *compiler = new CompilerInfo("input.txt", "output.txt", "debug.txt");
 
     //Define what to print
-    bool printSymTable = false;
-    bool printLabeledSynTree = false;
+    int choice = 0;
+//    choice = getPrintPreference();
+    bool printSymTable = choice % 2;
+    bool printLabeledSynTree = (choice<<1)%2;
 
     //construct the parse tree
     TreeNode *parseTreeRoot = Parse(compiler);
-
     //construct the symbol table
     SymbolTable *symbolTable = createSymbolTable(parseTreeRoot, new SymbolTable());
     if(printSymTable) symbolTable->Print();
@@ -862,4 +1030,7 @@ int main() {
     //add data types to the tree nodes
     addTypesToSyntaxTree(parseTreeRoot);
     if(printLabeledSynTree) PrintTree(parseTreeRoot);
+
+    //Run a simulation of the compilation of the code as if the program is actually running
+    evaluateTree(parseTreeRoot, symbolTable);
 }
